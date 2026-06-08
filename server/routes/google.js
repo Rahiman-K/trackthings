@@ -47,8 +47,9 @@ router.get('/feed/:userId.ics', async (req, res) => {
         ics.push('BEGIN:VEVENT');
         ics.push('UID:' + task.id + '@trackthings.app');
         ics.push('DTSTAMP:' + now);
-        ics.push('DTSTART:' + dateStr + 'T' + startTimeStr + 'Z');
-        ics.push('DTEND:' + dateStr + 'T' + endTimeStr + 'Z');
+        // Use floating time (no Z suffix) so it shows in the user's local timezone
+        ics.push('DTSTART:' + dateStr + 'T' + startTimeStr);
+        ics.push('DTEND:' + dateStr + 'T' + endTimeStr);
       } else {
         ics.push('BEGIN:VEVENT');
         ics.push('UID:' + task.id + '@trackthings.app');

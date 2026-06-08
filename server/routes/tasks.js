@@ -101,21 +101,29 @@ router.put('/:id', async (req, res) => {
     const task = await db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
-    const completed_at = status === 'completed' ? new Date().toISOString() : task.completed_at;
+    const newTitle = title !== undefined ? title : task.title;
+    const newDescription = description !== undefined ? description : task.description;
+    const newPlannedDuration = planned_duration !== undefined ? planned_duration : task.planned_duration;
+    const newScheduledDate = scheduled_date !== undefined ? scheduled_date : task.scheduled_date;
+    const newScheduledTime = scheduled_time !== undefined ? scheduled_time : task.scheduled_time;
+    const newStatus = status !== undefined ? status : task.status;
+    const newPriority = priority !== undefined ? priority : task.priority;
+    const newSortOrder = sort_order !== undefined ? sort_order : task.sort_order;
+    const newCompletedAt = status === 'completed' ? new Date().toISOString() : task.completed_at;
 
     await db.run(
       `UPDATE tasks SET
-        title = COALESCE(?, title),
-        description = COALESCE(?, description),
-        planned_duration = COALESCE(?, planned_duration),
-        scheduled_date = COALESCE(?, scheduled_date),
-        scheduled_time = COALESCE(?, scheduled_time),
-        status = COALESCE(?, status),
-        priority = COALESCE(?, priority),
-        sort_order = COALESCE(?, sort_order),
+        title = ?,
+        description = ?,
+        planned_duration = ?,
+        scheduled_date = ?,
+        scheduled_time = ?,
+        status = ?,
+        priority = ?,
+        sort_order = ?,
         completed_at = ?
       WHERE id = ? AND user_id = ?`,
-      title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order, completed_at, req.params.id, req.user.id
+      newTitle, newDescription, newPlannedDuration, newScheduledDate, newScheduledTime, newStatus, newPriority, newSortOrder, newCompletedAt, req.params.id, req.user.id
     );
 
     const updated = await db.get('SELECT * FROM tasks WHERE id = ?', req.params.id);
