@@ -1,4 +1,6 @@
-const API_BASE = '/api';
+// In production (APK/mobile), point to your deployed server
+// In development, use the Vite proxy (empty string = same origin)
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 function getToken() {
   return localStorage.getItem('trackthings-token');
@@ -21,10 +23,11 @@ async function request(url, options = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE}${url}`, { headers, ...options });
+  const fullUrl = API_BASE.includes('http') ? `${API_BASE}${url}` : `${API_BASE}${url}`;
+
+  const res = await fetch(fullUrl, { headers, ...options });
 
   if (res.status === 401 || res.status === 403) {
-    // Token expired or invalid
     setToken(null);
     window.location.reload();
     throw new Error('Session expired');
