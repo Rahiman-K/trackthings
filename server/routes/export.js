@@ -1,13 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+
+router.use(authenticateToken);
 
 // Export all data as JSON
 router.get('/json', (req, res) => {
-  const tasks = db.prepare('SELECT * FROM tasks ORDER BY created_at DESC').all();
-  const checklist_items = db.prepare('SELECT * FROM checklist_items ORDER BY sort_order ASC').all();
-  const time_sessions = db.prepare('SELECT * FROM time_sessions ORDER BY started_at DESC').all();
-  const daily_reviews = db.prepare('SELECT * FROM daily_reviews ORDER BY date DESC').all();
+  const userId = req.user.id;
+  const tasks = db.prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+  const taskIds = tasks.map(t => t.id);
+
+  let checklist_items = [];
+  let time_sessions = [];
+  if (taskIds.length > 0) {
+    const placeholders = taskIds.map(() => '?').join(',');
+    checklist_items = db.prepare(`SELECT * FROM checklist_items WHERE task_id IN (${placeholders}) ORDER BY sort_order ASC`).all(...taskIds);
+    time_sessions = db.prepare(`SELECT * FROM time_sessions WHERE task_id IN (${placeholders}) ORDER BY started_at DESC`).all(...taskIds);
+  }
+
+  const daily_reviews = db.prepare('SELECT * FROM daily_reviews WHERE user_id = ? ORDER BY date DESC').all(userId);
 
   const exportData = {
     exported_at: new Date().toISOString(),
@@ -28,13 +40,15 @@ router.get('/json', (req, res) => {
 // Import data from JSON
 router.post('/import', (req, res) => {
   const { data } = req.body;
+  const userId = req.user.id;
+
   if (!data || !data.tasks) {
     return res.status(400).json({ error: 'Invalid import data' });
   }
 
   const insertTask = db.prepare(`
-    INSERT OR REPLACE INTO tasks (id, title, description, planned_duration, scheduled_date, scheduled_time, status, priority, created_at, completed_at, rolled_over_from, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT OR REPLACE INTO tasks (id, user_id, title, description, planned_duration, scheduled_date, scheduled_time, status, priority, created_at, completed_at, rolled_over_from, sort_order)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertChecklist = db.prepare(`
@@ -49,7 +63,7 @@ router.post('/import', (req, res) => {
 
   const transaction = db.transaction(() => {
     for (const t of data.tasks) {
-      insertTask.run(t.id, t.title, t.description, t.planned_duration, t.scheduled_date, t.scheduled_time, t.status, t.priority, t.created_at, t.completed_at, t.rolled_over_from, t.sort_order);
+      insertTask.run(t.id, userId, t.title, t.description, t.planned_duration, t.scheduled_date, t.scheduled_time, t.status, t.priority, t.created_at, t.completed_at, t.rolled_over_from, t.sort_order);
     }
     for (const c of (data.checklist_items || [])) {
       insertChecklist.run(c.id, c.task_id, c.title, c.is_completed, c.sort_order);

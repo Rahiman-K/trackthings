@@ -2,10 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const db = require('./db');
+const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
 const timerRoutes = require('./routes/timer');
 const historyRoutes = require('./routes/history');
 const exportRoutes = require('./routes/export');
+const googleRoutes = require('./routes/google');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -19,10 +21,12 @@ app.get('/api/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/timer', timerRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/google', googleRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

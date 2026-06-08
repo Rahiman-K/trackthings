@@ -1,16 +1,47 @@
 const API_BASE = '/api';
 
+function getToken() {
+  return localStorage.getItem('trackthings-token');
+}
+
+export function setToken(token) {
+  if (token) {
+    localStorage.setItem('trackthings-token', token);
+  } else {
+    localStorage.removeItem('trackthings-token');
+  }
+}
+
+export function isLoggedIn() {
+  return !!getToken();
+}
+
 async function request(url, options = {}) {
-  const res = await fetch(`${API_BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  const token = getToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}${url}`, { headers, ...options });
+
+  if (res.status === 401 || res.status === 403) {
+    // Token expired or invalid
+    setToken(null);
+    window.location.reload();
+    throw new Error('Session expired');
+  }
+
   if (!res.ok) {
     const error = await res.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(error.error || 'Request failed');
   }
   return res.json();
 }
+
+// Auth
+export const register = (email, password, name) => request('/auth/register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+export const login = (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+export const getProfile = () => request('/auth/me');
+export const updateProfile = (data) => request('/auth/me', { method: 'PUT', body: JSON.stringify(data) });
 
 // Tasks
 export const getTasks = (date) => request(`/tasks?date=${date}`);
@@ -46,3 +77,10 @@ export const getReview = (date) => request(`/history/review/${date}`);
 // Export / Import
 export const exportData = () => request('/export/json');
 export const importData = (data) => request('/export/import', { method: 'POST', body: JSON.stringify({ data }) });
+
+// Google Calendar
+export const getGoogleAuthUrl = () => request('/google/auth-url');
+export const getGoogleStatus = () => request('/google/status');
+export const disconnectGoogle = () => request('/google/disconnect', { method: 'POST' });
+export const syncTaskToGoogle = (taskId) => request(`/google/sync-task/${taskId}`, { method: 'POST' });
+export const syncDayToGoogle = (date) => request('/google/sync-day', { method: 'POST', body: JSON.stringify({ date }) });

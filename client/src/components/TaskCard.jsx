@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   Play, Pause, Square, CheckCircle2, Circle, Clock, Timer,
-  Edit2, Trash2, Focus, RotateCcw, ChevronDown, ChevronRight
+  Edit2, Trash2, Focus, RotateCcw, ChevronDown, ChevronRight, CalendarPlus
 } from 'lucide-react';
-import { updateTask, deleteTask, startTimer, pauseTimer, resumeTimer, stopTimer, updateChecklistItem } from '../api';
+import { updateTask, deleteTask, startTimer, pauseTimer, resumeTimer, stopTimer, updateChecklistItem, syncTaskToGoogle } from '../api';
 
 export default function TaskCard({ task, onEdit, onFocus, onRefresh }) {
   const [expanded, setExpanded] = useState(false);
@@ -100,6 +100,14 @@ export default function TaskCard({ task, onEdit, onFocus, onRefresh }) {
       onRefresh();
     } catch (err) {
       console.error('Failed to toggle checklist:', err);
+    }
+  };
+
+  const handleSyncGoogle = async () => {
+    try {
+      await syncTaskToGoogle(task.id);
+    } catch (err) {
+      console.error('Google sync failed:', err);
     }
   };
 
@@ -234,10 +242,13 @@ export default function TaskCard({ task, onEdit, onFocus, onRefresh }) {
           )}
 
           {/* Edit/Delete */}
-          <button onClick={onEdit} className="p-2 hover:bg-gray-100 rounded-lg text-gray-400" title="Edit">
+          <button onClick={handleSyncGoogle} className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg text-blue-400" title="Sync to Google Calendar">
+            <CalendarPlus className="w-4 h-4" />
+          </button>
+          <button onClick={onEdit} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400" title="Edit">
             <Edit2 className="w-4 h-4" />
           </button>
-          <button onClick={handleDelete} className="p-2 hover:bg-red-50 rounded-lg text-red-400" title="Delete">
+          <button onClick={handleDelete} className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-red-400" title="Delete">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>

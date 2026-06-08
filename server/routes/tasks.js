@@ -2,20 +2,25 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+
+// All task routes require authentication
+router.use(authenticateToken);
 
 // Get all tasks for a specific date
 router.get('/', (req, res) => {
   const { date } = req.query;
+  const userId = req.user.id;
   let tasks;
 
   if (date) {
     tasks = db.prepare(`
-      SELECT * FROM tasks WHERE scheduled_date = ? ORDER BY sort_order ASC, created_at ASC
-    `).all(date);
+      SELECT * FROM tasks WHERE user_id = ? AND scheduled_date = ? ORDER BY sort_order ASC, created_at ASC
+    `).all(userId, date);
   } else {
     tasks = db.prepare(`
-      SELECT * FROM tasks WHERE status != 'completed' ORDER BY sort_order ASC, created_at ASC
-    `).all();
+      SELECT * FROM tasks WHERE user_id = ? AND status != 'completed' ORDER BY sort_order ASC, created_at ASC
+    `).all(userId);
   }
 
   // Attach checklist items and time sessions to each task
@@ -38,7 +43,7 @@ router.get('/', (req, res) => {
 
 // Get single task
 router.get('/:id', (req, res) => {
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
   const checklist = db.prepare(
@@ -58,12 +63,13 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   const { title, description, planned_duration, scheduled_date, scheduled_time, priority, checklist } = req.body;
   const id = uuidv4();
+  const userId = req.user.id;
   const today = new Date().toISOString().split('T')[0];
 
   db.prepare(`
-    INSERT INTO tasks (id, title, description, planned_duration, scheduled_date, scheduled_time, priority)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `).run(id, title, description || '', planned_duration || 0, scheduled_date || today, scheduled_time || null, priority || 'medium');
+    INSERT INTO tasks (id, user_id, title, description, planned_duration, scheduled_date, scheduled_time, priority)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, title, description || '', planned_duration || 0, scheduled_date || today, scheduled_time || null, priority || 'medium');
 
   // Add checklist items if provided
   if (checklist && checklist.length > 0) {
@@ -84,7 +90,7 @@ router.post('/', (req, res) => {
 // Update a task
 router.put('/:id', (req, res) => {
   const { title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order } = req.body;
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
   if (!task) return res.status(404).json({ error: 'Task not found' });
 
   const completed_at = status === 'completed' ? new Date().toISOString() : task.completed_at;
@@ -100,8 +106,8 @@ router.put('/:id', (req, res) => {
       priority = COALESCE(?, priority),
       sort_order = COALESCE(?, sort_order),
       completed_at = ?
-    WHERE id = ?
-  `).run(title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order, completed_at, req.params.id);
+    WHERE id = ? AND user_id = ?
+  `).run(title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order, completed_at, req.params.id, req.user.id);
 
   const updated = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
   res.json(updated);
@@ -109,18 +115,18 @@ router.put('/:id', (req, res) => {
 
 // Delete a task
 router.delete('/:id', (req, res) => {
-  db.prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
+  db.prepare('DELETE FROM tasks WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
   res.json({ success: true });
 });
 
 // Rollover incomplete tasks to today
 router.post('/rollover', (req, res) => {
   const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const userId = req.user.id;
 
   const incompleteTasks = db.prepare(`
-    SELECT * FROM tasks WHERE scheduled_date < ? AND status != 'completed'
-  `).all(today);
+    SELECT * FROM tasks WHERE user_id = ? AND scheduled_date < ? AND status != 'completed'
+  `).all(userId, today);
 
   const rollover = db.prepare(`
     UPDATE tasks SET scheduled_date = ?, rolled_over_from = scheduled_date WHERE id = ?
@@ -136,6 +142,10 @@ router.post('/rollover', (req, res) => {
 // Checklist operations
 router.post('/:id/checklist', (req, res) => {
   const { title } = req.body;
+  // Verify task belongs to user
+  const task = db.prepare('SELECT id FROM tasks WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!task) return res.status(404).json({ error: 'Task not found' });
+
   const itemId = uuidv4();
   const maxOrder = db.prepare(
     'SELECT MAX(sort_order) as max FROM checklist_items WHERE task_id = ?'

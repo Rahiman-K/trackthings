@@ -2,31 +2,36 @@ const express = require('express');
 const router = express.Router();
 const { v4: uuidv4 } = require('uuid');
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+
+router.use(authenticateToken);
 
 // Get history/stats for a date range
 router.get('/stats', (req, res) => {
   const { start_date, end_date } = req.query;
+  const userId = req.user.id;
   const today = new Date().toISOString().split('T')[0];
   const startDate = start_date || today;
   const endDate = end_date || today;
 
   const completedTasks = db.prepare(`
     SELECT COUNT(*) as count FROM tasks
-    WHERE completed_at IS NOT NULL
+    WHERE user_id = ? AND completed_at IS NOT NULL
     AND date(completed_at) BETWEEN ? AND ?
-  `).get(startDate, endDate);
+  `).get(userId, startDate, endDate);
 
   const totalTimeTracked = db.prepare(`
-    SELECT COALESCE(SUM(total_elapsed), 0) as total FROM time_sessions
-    WHERE date(started_at) BETWEEN ? AND ?
-    AND status = 'stopped'
-  `).get(startDate, endDate);
+    SELECT COALESCE(SUM(ts.total_elapsed), 0) as total FROM time_sessions ts
+    JOIN tasks t ON ts.task_id = t.id
+    WHERE t.user_id = ? AND date(ts.started_at) BETWEEN ? AND ?
+    AND ts.status = 'stopped'
+  `).get(userId, startDate, endDate);
 
   const tasksByStatus = db.prepare(`
     SELECT status, COUNT(*) as count FROM tasks
-    WHERE scheduled_date BETWEEN ? AND ?
+    WHERE user_id = ? AND scheduled_date BETWEEN ? AND ?
     GROUP BY status
-  `).all(startDate, endDate);
+  `).all(userId, startDate, endDate);
 
   const dailyBreakdown = db.prepare(`
     SELECT
@@ -36,10 +41,10 @@ router.get('/stats', (req, res) => {
       COALESCE(SUM(ts.total_elapsed), 0) as time_tracked
     FROM tasks t
     LEFT JOIN time_sessions ts ON t.id = ts.task_id AND ts.status = 'stopped'
-    WHERE t.scheduled_date BETWEEN ? AND ?
+    WHERE t.user_id = ? AND t.scheduled_date BETWEEN ? AND ?
     GROUP BY t.scheduled_date
     ORDER BY t.scheduled_date DESC
-  `).all(startDate, endDate);
+  `).all(userId, startDate, endDate);
 
   res.json({
     completed_tasks: completedTasks.count,
@@ -49,9 +54,10 @@ router.get('/stats', (req, res) => {
   });
 });
 
-// Get task history with time details
+// Get task history
 router.get('/tasks', (req, res) => {
   const { start_date, end_date, status } = req.query;
+  const userId = req.user.id;
   const today = new Date().toISOString().split('T')[0];
   const startDate = start_date || new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
   const endDate = end_date || today;
@@ -62,9 +68,9 @@ router.get('/tasks', (req, res) => {
       COUNT(ts.id) as session_count
     FROM tasks t
     LEFT JOIN time_sessions ts ON t.id = ts.task_id AND ts.status = 'stopped'
-    WHERE t.scheduled_date BETWEEN ? AND ?
+    WHERE t.user_id = ? AND t.scheduled_date BETWEEN ? AND ?
   `;
-  const params = [startDate, endDate];
+  const params = [userId, startDate, endDate];
 
   if (status) {
     query += ' AND t.status = ?';
@@ -80,28 +86,29 @@ router.get('/tasks', (req, res) => {
 // Save daily review
 router.post('/review', (req, res) => {
   const { date, notes } = req.body;
+  const userId = req.user.id;
   const today = date || new Date().toISOString().split('T')[0];
 
   const completedCount = db.prepare(
-    "SELECT COUNT(*) as count FROM tasks WHERE scheduled_date = ? AND status = 'completed'"
-  ).get(today);
+    "SELECT COUNT(*) as count FROM tasks WHERE user_id = ? AND scheduled_date = ? AND status = 'completed'"
+  ).get(userId, today);
 
   const rolledOverCount = db.prepare(
-    "SELECT COUNT(*) as count FROM tasks WHERE rolled_over_from IS NOT NULL AND scheduled_date = ?"
-  ).get(today);
+    "SELECT COUNT(*) as count FROM tasks WHERE user_id = ? AND rolled_over_from IS NOT NULL AND scheduled_date = ?"
+  ).get(userId, today);
 
   const totalTime = db.prepare(`
-    SELECT COALESCE(SUM(total_elapsed), 0) as total FROM time_sessions ts
+    SELECT COALESCE(SUM(ts.total_elapsed), 0) as total FROM time_sessions ts
     JOIN tasks t ON ts.task_id = t.id
-    WHERE t.scheduled_date = ? AND ts.status = 'stopped'
-  `).get(today);
+    WHERE t.user_id = ? AND t.scheduled_date = ? AND ts.status = 'stopped'
+  `).get(userId, today);
 
   const id = uuidv4();
 
   db.prepare(`
-    INSERT OR REPLACE INTO daily_reviews (id, date, tasks_completed, tasks_rolled_over, total_time_tracked, notes)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, today, completedCount.count, rolledOverCount.count, totalTime.total, notes || '');
+    INSERT OR REPLACE INTO daily_reviews (id, user_id, date, tasks_completed, tasks_rolled_over, total_time_tracked, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(id, userId, today, completedCount.count, rolledOverCount.count, totalTime.total, notes || '');
 
   const review = db.prepare('SELECT * FROM daily_reviews WHERE id = ?').get(id);
   res.json(review);
@@ -109,7 +116,7 @@ router.post('/review', (req, res) => {
 
 // Get daily review
 router.get('/review/:date', (req, res) => {
-  const review = db.prepare('SELECT * FROM daily_reviews WHERE date = ?').get(req.params.date);
+  const review = db.prepare('SELECT * FROM daily_reviews WHERE user_id = ? AND date = ?').get(req.user.id, req.params.date);
   res.json(review || null);
 });
 
