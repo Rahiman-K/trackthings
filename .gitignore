@@ -1,0 +1,7 @@
+node_modules/
+dist/
+data/timebox.db
+data/timebox.db-shm
+data/timebox.db-wal
+.env
+.vscode/
