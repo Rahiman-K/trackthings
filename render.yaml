@@ -11,5 +11,3 @@ services:
         generateValue: true
       - key: FRONTEND_URL
         value: https://trackthings.onrender.com
-      - key: GOOGLE_REDIRECT_URI
-        value: https://trackthings.onrender.com/api/google/callback

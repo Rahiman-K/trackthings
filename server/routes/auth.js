@@ -98,4 +98,60 @@ router.put('/me', authenticateToken, async (req, res) => {
   res.json(updated);
 });
 
+// Forgot password - generate a reset token
+router.post('/forgot-password', (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'Email is required' });
+
+  const user = db.prepare('SELECT id, email FROM users WHERE email = ?').get(email.toLowerCase());
+  if (!user) {
+    // Don't reveal if email exists or not
+    return res.json({ message: 'If that email exists, a reset link has been generated.' });
+  }
+
+  // Generate a short-lived reset token (valid 1 hour)
+  const resetToken = require('jsonwebtoken').sign(
+    { id: user.id, purpose: 'reset' },
+    require('../middleware/auth').JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+
+  // For self-hosted app, we'll return the token directly
+  // In a production app with email service, you'd email this link
+  console.log(`\n🔑 Password reset for ${email}: /reset-password?token=${resetToken}\n`);
+
+  res.json({
+    message: 'If that email exists, a reset link has been generated.',
+    // Include token in response for self-hosted use (no email server)
+    resetToken
+  });
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: 'Token and new password are required' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+
+  try {
+    const decoded = require('jsonwebtoken').verify(token, require('../middleware/auth').JWT_SECRET);
+    if (decoded.purpose !== 'reset') {
+      return res.status(400).json({ error: 'Invalid reset token' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, decoded.id);
+
+    res.json({ message: 'Password reset successful. You can now sign in.' });
+  } catch (err) {
+    res.status(400).json({ error: 'Invalid or expired reset token' });
+  }
+});
+
 module.exports = router;

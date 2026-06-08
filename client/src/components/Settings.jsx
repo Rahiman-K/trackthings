@@ -1,51 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Link2, Unlink, User, LogOut } from 'lucide-react';
-import { getGoogleAuthUrl, getGoogleStatus, disconnectGoogle, updateProfile, setToken } from '../api';
+import { Calendar, User, LogOut, Copy, CheckCircle2, ExternalLink } from 'lucide-react';
+import { updateProfile, setToken } from '../api';
+
+const API_BASE = '/api';
 
 export default function Settings({ user, onLogout }) {
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [feedUrl, setFeedUrl] = useState('');
+  const [copied, setCopied] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    loadGoogleStatus();
-    // Check if returning from Google OAuth
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('google') === 'connected') {
-      setGoogleConnected(true);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    loadFeedUrl();
   }, []);
 
-  const loadGoogleStatus = async () => {
+  const loadFeedUrl = async () => {
     try {
-      const { connected } = await getGoogleStatus();
-      setGoogleConnected(connected);
+      const token = localStorage.getItem('trackthings-token');
+      const res = await fetch(`${API_BASE}/google/feed-url`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setFeedUrl(data.url);
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleConnectGoogle = async () => {
-    setLoading(true);
-    try {
-      const { url } = await getGoogleAuthUrl();
-      window.location.href = url;
-    } catch (err) {
-      alert(err.message);
-    }
-    setLoading(false);
-  };
-
-  const handleDisconnectGoogle = async () => {
-    if (!confirm('Disconnect Google Calendar?')) return;
-    try {
-      await disconnectGoogle();
-      setGoogleConnected(false);
-    } catch (err) {
-      alert(err.message);
-    }
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(feedUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleSaveProfile = async () => {
@@ -102,36 +87,57 @@ export default function Settings({ user, onLogout }) {
       <div className="card">
         <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-gray-400" />
-          Google Calendar
+          Google Calendar Sync
         </h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Connect your Google Calendar to sync tasks as calendar events. Your scheduled tasks will appear in Google Calendar with the planned duration.
+          Add your tasks to Google Calendar by subscribing to this URL. Your tasks will automatically appear as events.
         </p>
-        {googleConnected ? (
-          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+
+        {feedUrl && (
+          <div className="space-y-4">
+            {/* Feed URL */}
             <div className="flex items-center gap-2">
-              <Link2 className="w-5 h-5 text-green-600" />
-              <span className="text-sm font-medium text-green-700 dark:text-green-400">Google Calendar connected</span>
+              <input
+                type="text"
+                value={feedUrl}
+                readOnly
+                className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 font-mono"
+              />
+              <button
+                onClick={handleCopyUrl}
+                className="flex items-center gap-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
             </div>
-            <button onClick={handleDisconnectGoogle} className="flex items-center gap-1 text-sm text-red-600 hover:text-red-700">
-              <Unlink className="w-4 h-4" />
-              Disconnect
-            </button>
+
+            {/* Instructions */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 dark:text-blue-300 text-sm mb-2">How to add to Google Calendar:</h4>
+              <ol className="text-sm text-blue-800 dark:text-blue-300 space-y-1.5 list-decimal list-inside">
+                <li>Copy the URL above</li>
+                <li>Open <a href="https://calendar.google.com" target="_blank" rel="noopener" className="underline">Google Calendar</a></li>
+                <li>Click <strong>+</strong> next to "Other calendars" (left sidebar)</li>
+                <li>Select <strong>"From URL"</strong></li>
+                <li>Paste the URL → Click <strong>"Add calendar"</strong></li>
+              </ol>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
+                Google refreshes subscribed calendars every few hours. New tasks will appear automatically.
+              </p>
+            </div>
+
+            {/* Direct link to add */}
+            <a
+              href={`https://calendar.google.com/calendar/r/settings/addbyurl`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-medium"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Open Google Calendar Settings
+            </a>
           </div>
-        ) : (
-          <button
-            onClick={handleConnectGoogle}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors font-medium text-sm text-gray-700 dark:text-gray-200"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            {loading ? 'Connecting...' : 'Connect Google Calendar'}
-          </button>
         )}
       </div>
 

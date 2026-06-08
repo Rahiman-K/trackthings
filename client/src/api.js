@@ -45,6 +45,8 @@ export const register = (email, password, name) => request('/auth/register', { m
 export const login = (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
 export const getProfile = () => request('/auth/me');
 export const updateProfile = (data) => request('/auth/me', { method: 'PUT', body: JSON.stringify(data) });
+export const forgotPassword = (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+export const resetPassword = (token, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPassword }) });
 
 // Tasks
 export const getTasks = (date) => request(`/tasks?date=${date}`);
@@ -82,8 +84,5 @@ export const exportData = () => request('/export/json');
 export const importData = (data) => request('/export/import', { method: 'POST', body: JSON.stringify({ data }) });
 
 // Google Calendar
-export const getGoogleAuthUrl = () => request('/google/auth-url');
+export const getCalendarFeedUrl = () => request('/google/feed-url');
 export const getGoogleStatus = () => request('/google/status');
-export const disconnectGoogle = () => request('/google/disconnect', { method: 'POST' });
-export const syncTaskToGoogle = (taskId) => request(`/google/sync-task/${taskId}`, { method: 'POST' });
-export const syncDayToGoogle = (date) => request('/google/sync-day', { method: 'POST', body: JSON.stringify({ date }) });
