@@ -21,7 +21,7 @@ router.get('/json', (req, res) => {
   };
 
   res.setHeader('Content-Type', 'application/json');
-  res.setHeader('Content-Disposition', `attachment; filename=timebox-export-${new Date().toISOString().split('T')[0]}.json`);
+  res.setHeader('Content-Disposition', `attachment; filename=trackthings-export-${new Date().toISOString().split('T')[0]}.json`);
   res.json(exportData);
 });
 

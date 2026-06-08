@@ -48,7 +48,7 @@ export default function HistoryView() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `timebox-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `trackthings-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -69,7 +69,7 @@ export default function HistoryView() {
       loadData();
     } catch (err) {
       console.error('Import failed:', err);
-      alert('Import failed. Make sure the file is a valid TimeBox export.');
+      alert('Import failed. Make sure the file is a valid TrackThings export.');
     }
     e.target.value = '';
   };

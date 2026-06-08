@@ -1,7 +1,7 @@
 {
-  "name": "TimeBox",
-  "short_name": "TimeBox",
-  "description": "Time-boxed task execution tracker",
+  "name": "TrackThings",
+  "short_name": "TrackThings",
+  "description": "Track your tasks, time, and goals",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

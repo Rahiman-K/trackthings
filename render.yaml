@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: timebox
+    name: trackthings
     runtime: node
     buildCommand: npm install && cd client && npm install && npm run build
     startCommand: npm start

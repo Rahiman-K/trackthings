@@ -35,5 +35,5 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`TimeBox server running on http://localhost:${PORT}`);
+  console.log(`TrackThings server running on http://localhost:${PORT}`);
 });

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 export function useTheme() {
   const [dark, setDark] = useState(() => {
-    const saved = localStorage.getItem('timebox-theme');
+    const saved = localStorage.getItem('trackthings-theme');
     if (saved) return saved === 'dark';
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
@@ -16,7 +16,7 @@ export function useTheme() {
       root.classList.remove('dark');
       document.body.classList.remove('dark');
     }
-    localStorage.setItem('timebox-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('trackthings-theme', dark ? 'dark' : 'light');
   }, [dark]);
 
   return [dark, setDark];

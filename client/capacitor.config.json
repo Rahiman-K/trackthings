@@ -1,6 +1,6 @@
 {
-  "appId": "com.timebox.app",
-  "appName": "TimeBox",
+  "appId": "com.trackthings.app",
+  "appName": "TrackThings",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

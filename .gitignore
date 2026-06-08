@@ -1,5 +1,8 @@
 node_modules/
 dist/
+data/trackthings.db
+data/trackthings.db-shm
+data/trackthings.db-wal
 data/timebox.db
 data/timebox.db-shm
 data/timebox.db-wal

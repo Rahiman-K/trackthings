@@ -49,7 +49,7 @@ export default function App() {
           <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
             <Clock className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">TimeBox</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">TrackThings</h1>
         </div>
         <div className="flex items-center gap-3">
           <button
