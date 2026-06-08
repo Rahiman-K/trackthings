@@ -68,21 +68,21 @@ export default function DayView({ date, onDateChange, showDatePicker, onEditTask
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           {showDatePicker && (
-            <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-200 rounded-lg">
-              <ChevronLeft className="w-5 h-5" />
+            <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+              <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           )}
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
               {isToday ? "Today's Plan" : formatDate(date)}
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               {completedCount}/{tasks.length} tasks done • {formatDuration(totalPlanned)} planned • {formatDuration(totalTracked)} tracked
             </p>
           </div>
           {showDatePicker && (
-            <button onClick={() => navigateDate(1)} className="p-2 hover:bg-gray-200 rounded-lg">
-              <ChevronRight className="w-5 h-5" />
+            <button onClick={() => navigateDate(1)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg">
+              <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           )}
         </div>
@@ -91,7 +91,7 @@ export default function DayView({ date, onDateChange, showDatePicker, onEditTask
             type="date"
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-gray-200"
           />
         )}
       </div>
@@ -120,18 +120,18 @@ export default function DayView({ date, onDateChange, showDatePicker, onEditTask
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">Loading tasks...</div>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">Loading tasks...</div>
       ) : tasks.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No tasks for this day</p>
-          <p className="text-gray-400 text-sm mt-2">Create a new task to get started</p>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">No tasks for this day</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Create a new task to get started</p>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Scheduled Tasks */}
           {scheduledTasks.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
                 Scheduled
               </h3>
               <div className="space-y-3">
@@ -153,7 +153,7 @@ export default function DayView({ date, onDateChange, showDatePicker, onEditTask
           {/* Unscheduled Tasks */}
           {unscheduledTasks.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
                 {scheduledTasks.length > 0 ? 'Unscheduled' : 'Tasks'}
               </h3>
               <div className="space-y-3">

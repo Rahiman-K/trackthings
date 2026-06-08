@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Play, Pause, Square, CheckCircle2, Timer } from 'lucide-react';
 import { startTimer, pauseTimer, resumeTimer, stopTimer, updateTask, updateChecklistItem, getTask } from '../api';
+import { useNotification } from '../hooks/useNotification';
 
 export default function FocusMode({ task: initialTask, onClose }) {
   const [task, setTask] = useState(initialTask);
@@ -9,7 +10,9 @@ export default function FocusMode({ task: initialTask, onClose }) {
   );
   const [elapsed, setElapsed] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [notified, setNotified] = useState(false);
   const intervalRef = useRef(null);
+  const { notify } = useNotification();
 
   // Calculate initial elapsed time
   useEffect(() => {
@@ -35,6 +38,20 @@ export default function FocusMode({ task: initialTask, onClose }) {
     }
     return () => clearInterval(intervalRef.current);
   }, [isRunning]);
+
+  // Notification when planned time is reached
+  useEffect(() => {
+    if (!notified && task.planned_duration > 0 && elapsed >= task.planned_duration && isRunning) {
+      notify('⏱️ Time is up!', `You've spent ${formatDuration(task.planned_duration)} on "${task.title}". Great work!`);
+      setNotified(true);
+      // Also play a sound
+      try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgkKmvnGRGQmSIoq2dZUxHX4Oenp1oVUlYgpSXmZdkTkRdgI+Tk5RUST1ffoqNj41MS0Bxe4WJiIdCPkd6fIKEg3s8RnN6f4KBfnhAUXl/gn99d3g8TXV8fn18d3RAWHl+fX13dHU8T3V7fX15dnVFXHp/fn55dnVBUnd9fn16d3REW3l+fn56eHVBUnh9fn17eHVFW3l+fn57eHZCU3h+fn57eHZEW3p+fn57eHZDVHl+fn57eHZDWnl+fn57eHZDVHh+fn57eXZEW3l+fn57eHZDVHl+fn57eHZEW3l+fn57eHZDVHl+fn57eHZEWnl+fn57eHZDVHl+fn57eHZDWnl+fn57eHZDVHl+fn57eHZEW3l+');
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+  }, [elapsed, notified, task.planned_duration, isRunning]);
 
   const refreshTask = async () => {
     try {
@@ -93,6 +110,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
     try {
       if (session) await stopTimer(session.id);
       await updateTask(task.id, { status: 'completed' });
+      notify('✅ Task Complete!', `"${task.title}" marked as done.`);
       onClose();
     } catch (err) {
       console.error(err);
@@ -140,7 +158,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
       </button>
 
       {/* Focus content */}
-      <div className="text-center max-w-lg">
+      <div className="text-center max-w-lg w-full">
         {/* Task title */}
         <h1 className="text-3xl font-bold mb-2">{task.title}</h1>
         {task.description && (
@@ -149,7 +167,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
 
         {/* Timer display */}
         <div className="mb-8">
-          <div className={`text-7xl font-mono font-bold tracking-wider ${isOvertime ? 'text-red-400' : 'text-white'}`}>
+          <div className={`text-7xl font-mono font-bold tracking-wider ${isOvertime ? 'text-red-400 animate-pulse' : 'text-white'}`}>
             {formatTime(elapsed)}
           </div>
           {task.planned_duration > 0 && (
@@ -157,7 +175,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
               <Timer className="w-4 h-4" />
               <span>
                 {formatDuration(elapsed)} / {formatDuration(task.planned_duration)} planned
-                {isOvertime && <span className="text-red-400 ml-2">(overtime)</span>}
+                {isOvertime && <span className="text-red-400 ml-2">(overtime!)</span>}
               </span>
             </div>
           )}
@@ -166,9 +184,9 @@ export default function FocusMode({ task: initialTask, onClose }) {
         {/* Progress ring */}
         {task.planned_duration > 0 && (
           <div className="mb-8">
-            <div className="w-full bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-gray-700 rounded-full h-3">
               <div
-                className={`h-2 rounded-full transition-all duration-1000 ${isOvertime ? 'bg-red-500' : 'bg-primary-500'}`}
+                className={`h-3 rounded-full transition-all duration-1000 ${isOvertime ? 'bg-red-500' : 'bg-primary-500'}`}
                 style={{ width: `${Math.min(progressPercent, 100)}%` }}
               />
             </div>
@@ -179,22 +197,22 @@ export default function FocusMode({ task: initialTask, onClose }) {
         {/* Timer controls */}
         <div className="flex items-center justify-center gap-4 mb-8">
           {!session && !isRunning && (
-            <button onClick={handleStart} className="p-4 bg-green-600 hover:bg-green-700 rounded-full transition-colors">
+            <button onClick={handleStart} className="p-4 bg-green-600 hover:bg-green-700 rounded-full transition-colors shadow-lg shadow-green-600/30">
               <Play className="w-8 h-8" />
             </button>
           )}
           {isRunning && (
-            <button onClick={handlePause} className="p-4 bg-amber-600 hover:bg-amber-700 rounded-full transition-colors">
+            <button onClick={handlePause} className="p-4 bg-amber-600 hover:bg-amber-700 rounded-full transition-colors shadow-lg shadow-amber-600/30">
               <Pause className="w-8 h-8" />
             </button>
           )}
           {session && !isRunning && (
-            <button onClick={handleResume} className="p-4 bg-green-600 hover:bg-green-700 rounded-full transition-colors">
+            <button onClick={handleResume} className="p-4 bg-green-600 hover:bg-green-700 rounded-full transition-colors shadow-lg shadow-green-600/30">
               <Play className="w-8 h-8" />
             </button>
           )}
           {session && (
-            <button onClick={handleStop} className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition-colors">
+            <button onClick={handleStop} className="p-4 bg-red-600 hover:bg-red-700 rounded-full transition-colors shadow-lg shadow-red-600/30">
               <Square className="w-8 h-8" />
             </button>
           )}
@@ -211,7 +229,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
                     type="checkbox"
                     checked={!!item.is_completed}
                     onChange={() => handleChecklistToggle(item)}
-                    className="rounded border-gray-500 text-primary-500 focus:ring-primary-500 bg-transparent"
+                    className="rounded border-gray-500 text-primary-500 focus:ring-primary-500 bg-transparent w-5 h-5"
                   />
                   <span className={`text-sm ${item.is_completed ? 'line-through text-gray-500' : 'text-gray-200'}`}>
                     {item.title}
@@ -225,7 +243,7 @@ export default function FocusMode({ task: initialTask, onClose }) {
         {/* Complete button */}
         <button
           onClick={handleComplete}
-          className="flex items-center gap-2 mx-auto px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-medium transition-colors"
+          className="flex items-center gap-2 mx-auto px-6 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-medium transition-colors shadow-lg shadow-green-600/20"
         >
           <CheckCircle2 className="w-5 h-5" />
           Mark Complete

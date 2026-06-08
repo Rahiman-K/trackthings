@@ -131,7 +131,7 @@ export default function TaskCard({ task, onEdit, onFocus, onRefresh }) {
         {/* Task content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className={`font-medium text-gray-900 ${isCompleted ? 'line-through' : ''}`}>
+            <h4 className={`font-medium text-gray-900 dark:text-white ${isCompleted ? 'line-through' : ''}`}>
               {task.title}
             </h4>
             {task.rolled_over_from && (
@@ -143,7 +143,7 @@ export default function TaskCard({ task, onEdit, onFocus, onRefresh }) {
           </div>
 
           {/* Meta info */}
-          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 dark:text-gray-400">
             {task.scheduled_time && (
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />

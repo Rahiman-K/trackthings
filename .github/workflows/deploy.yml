@@ -1,0 +1,39 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install server dependencies
+        run: npm ci
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      - name: Verify server starts
+        run: |
+          timeout 5 node server/index.js &
+          sleep 2
+          curl -f http://localhost:3001/api/health || exit 1
+          kill %1 || true
+
+      # Render auto-deploys from GitHub on push to main
+      # No additional deploy step needed if you connect the repo on render.com

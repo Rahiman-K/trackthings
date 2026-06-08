@@ -42,3 +42,7 @@ export const getHistoryTasks = (startDate, endDate, status) => {
 };
 export const saveReview = (date, notes) => request('/history/review', { method: 'POST', body: JSON.stringify({ date, notes }) });
 export const getReview = (date) => request(`/history/review/${date}`);
+
+// Export / Import
+export const exportData = () => request('/export/json');
+export const importData = (data) => request('/export/import', { method: 'POST', body: JSON.stringify({ data }) });
