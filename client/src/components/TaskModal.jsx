@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { createTask, updateTask } from '../api';
+import { createTask, updateTask, getProjects } from '../api';
 
 export default function TaskModal({ task, onClose, onSaved, defaultDate }) {
   const [title, setTitle] = useState(task?.title || '');
@@ -10,9 +10,15 @@ export default function TaskModal({ task, onClose, onSaved, defaultDate }) {
   const [scheduledDate, setScheduledDate] = useState(task?.scheduled_date || defaultDate);
   const [scheduledTime, setScheduledTime] = useState(task?.scheduled_time || '');
   const [priority, setPriority] = useState(task?.priority || 'medium');
+  const [projectId, setProjectId] = useState(task?.project_id || '');
+  const [projects, setProjects] = useState([]);
   const [checklist, setChecklist] = useState(task?.checklist || []);
   const [newCheckItem, setNewCheckItem] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getProjects().then(setProjects).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +36,7 @@ export default function TaskModal({ task, onClose, onSaved, defaultDate }) {
           scheduled_date: scheduledDate,
           scheduled_time: scheduledTime || null,
           priority,
+          project_id: projectId || null,
         });
       } else {
         await createTask({
@@ -39,6 +46,7 @@ export default function TaskModal({ task, onClose, onSaved, defaultDate }) {
           scheduled_date: scheduledDate,
           scheduled_time: scheduledTime || null,
           priority,
+          project_id: projectId || null,
           checklist: checklist.map(c => ({ title: c.title })),
         });
       }
@@ -169,6 +177,21 @@ export default function TaskModal({ task, onClose, onSaved, defaultDate }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Project */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Project</label>
+            <select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">No Project</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Checklist */}

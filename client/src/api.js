@@ -86,3 +86,44 @@ export const importData = (data) => request('/export/import', { method: 'POST', 
 // Google Calendar
 export const getCalendarFeedUrl = () => request('/google/feed-url');
 export const getGoogleStatus = () => request('/google/status');
+
+// Projects
+export const getProjects = () => request('/projects');
+export const createProject = (data) => request('/projects', { method: 'POST', body: JSON.stringify(data) });
+export const updateProject = (id, data) => request(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteProject = (id) => request(`/projects/${id}`, { method: 'DELETE' });
+
+// Clients
+export const getClients = () => request('/clients');
+export const createClient = (data) => request('/clients', { method: 'POST', body: JSON.stringify(data) });
+export const updateClient = (id, data) => request(`/clients/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteClient = (id) => request(`/clients/${id}`, { method: 'DELETE' });
+
+// Tags
+export const getTags = () => request('/tags');
+export const createTag = (data) => request('/tags', { method: 'POST', body: JSON.stringify(data) });
+export const updateTag = (id, data) => request(`/tags/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteTag = (id) => request(`/tags/${id}`, { method: 'DELETE' });
+export const setEntryTags = (entryId, tag_ids) => request(`/tags/entry/${entryId}`, { method: 'PUT', body: JSON.stringify({ tag_ids }) });
+
+// Enhanced Timer / Time Entries
+export const quickStartTimer = (data) => request('/timer/quick-start', { method: 'POST', body: JSON.stringify(data) });
+export const createManualEntry = (data) => request('/timer/manual', { method: 'POST', body: JSON.stringify(data) });
+export const updateTimeEntry = (id, data) => request(`/timer/entry/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const duplicateTimeEntry = (id) => request(`/timer/entry/${id}/duplicate`, { method: 'POST' });
+export const deleteTimeEntry = (id) => request(`/timer/entry/${id}`, { method: 'DELETE' });
+export const getTimeEntries = (days = 7) => request(`/timer/entries?days=${days}`);
+
+// Reports
+export const getSummaryReport = (params) => {
+  const query = new URLSearchParams(params).toString();
+  return request(`/reports/summary?${query}`);
+};
+export const getDetailedReport = (params) => {
+  const query = new URLSearchParams(params).toString();
+  return request(`/reports/detailed?${query}`);
+};
+export const getWeeklyReport = (params) => {
+  const query = new URLSearchParams(params).toString();
+  return request(`/reports/weekly?${query}`);
+};

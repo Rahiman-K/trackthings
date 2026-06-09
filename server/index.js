@@ -8,6 +8,10 @@ const timerRoutes = require('./routes/timer');
 const historyRoutes = require('./routes/history');
 const exportRoutes = require('./routes/export');
 const googleRoutes = require('./routes/google');
+const projectRoutes = require('./routes/projects');
+const clientRoutes = require('./routes/clients');
+const tagRoutes = require('./routes/tags');
+const reportRoutes = require('./routes/reports');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +31,10 @@ app.use('/api/timer', timerRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/google', googleRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/clients', clientRoutes);
+app.use('/api/tags', tagRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {

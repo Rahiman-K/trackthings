@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, History, Plus, Sun, Moon, Settings as SettingsIcon } from 'lucide-react';
+import { Calendar, Clock, History, Plus, Sun, Moon, Settings as SettingsIcon, Briefcase, BarChart3, Timer, PlusCircle } from 'lucide-react';
 import DayView from './components/DayView';
 import TaskModal from './components/TaskModal';
 import HistoryView from './components/HistoryView';
 import FocusMode from './components/FocusMode';
 import AuthScreen from './components/AuthScreen';
 import Settings from './components/Settings';
+import TimerBar from './components/TimerBar';
+import TimeEntryList from './components/TimeEntryList';
+import ProjectsView from './components/ProjectsView';
+import ReportsView from './components/ReportsView';
+import ManualEntryModal from './components/ManualEntryModal';
 import { useTheme } from './hooks/useTheme';
 import { isLoggedIn, getProfile, setToken } from './api';
 
 const TABS = [
   { id: 'today', label: 'Today', icon: Sun },
   { id: 'calendar', label: 'Calendar', icon: Calendar },
+  { id: 'entries', label: 'Entries', icon: Timer },
+  { id: 'projects', label: 'Projects', icon: Briefcase },
+  { id: 'reports', label: 'Reports', icon: BarChart3 },
   { id: 'history', label: 'History', icon: History },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -21,6 +29,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('today');
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [focusTask, setFocusTask] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -94,7 +103,17 @@ export default function App() {
           >
             {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          {activeTab !== 'settings' && (
+          {activeTab === 'entries' && (
+            <button
+              onClick={() => setShowManualEntry(true)}
+              className="btn-primary flex items-center gap-2"
+              title="Manual time entry"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">Manual Entry</span>
+            </button>
+          )}
+          {(activeTab === 'today' || activeTab === 'calendar') && (
             <button
               onClick={() => { setEditingTask(null); setShowTaskModal(true); }}
               className="btn-primary flex items-center gap-2"
@@ -106,14 +125,17 @@ export default function App() {
         </div>
       </header>
 
+      {/* Global Timer Bar */}
+      <TimerBar onSessionChange={refresh} />
+
       {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-6">
+      <nav className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 px-6 overflow-x-auto">
         <div className="flex gap-1">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -148,6 +170,9 @@ export default function App() {
             onRefresh={refresh}
           />
         )}
+        {activeTab === 'entries' && <TimeEntryList refreshKey={refreshKey} />}
+        {activeTab === 'projects' && <ProjectsView />}
+        {activeTab === 'reports' && <ReportsView />}
         {activeTab === 'history' && <HistoryView />}
         {activeTab === 'settings' && <Settings user={user} onLogout={handleLogout} />}
       </main>
@@ -159,6 +184,14 @@ export default function App() {
           onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
           onSaved={() => { setShowTaskModal(false); setEditingTask(null); refresh(); }}
           defaultDate={activeTab === 'calendar' ? selectedDate : new Date().toISOString().split('T')[0]}
+        />
+      )}
+
+      {/* Manual Entry Modal */}
+      {showManualEntry && (
+        <ManualEntryModal
+          onClose={() => setShowManualEntry(false)}
+          onSaved={() => { setShowManualEntry(false); refresh(); }}
         />
       )}
     </div>

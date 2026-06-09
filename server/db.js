@@ -52,7 +52,8 @@ class DatabaseWrapper {
         created_at TEXT DEFAULT (datetime('now')),
         completed_at TEXT,
         rolled_over_from TEXT,
-        sort_order INTEGER DEFAULT 0
+        sort_order INTEGER DEFAULT 0,
+        project_id TEXT
       );
 
       CREATE TABLE IF NOT EXISTS checklist_items (
@@ -65,13 +66,17 @@ class DatabaseWrapper {
 
       CREATE TABLE IF NOT EXISTS time_sessions (
         id TEXT PRIMARY KEY,
-        task_id TEXT NOT NULL,
+        task_id TEXT,
+        user_id TEXT,
         started_at TEXT NOT NULL,
         paused_at TEXT,
         resumed_at TEXT,
         ended_at TEXT,
         total_elapsed INTEGER DEFAULT 0,
-        status TEXT DEFAULT 'running'
+        status TEXT DEFAULT 'running',
+        description TEXT DEFAULT '',
+        project_id TEXT,
+        is_billable INTEGER DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS daily_reviews (
@@ -84,6 +89,37 @@ class DatabaseWrapper {
         notes TEXT DEFAULT '',
         created_at TEXT DEFAULT (datetime('now')),
         UNIQUE(user_id, date)
+      );
+
+      CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        color TEXT DEFAULT '#3b82f6',
+        client_id TEXT,
+        billable_rate REAL DEFAULT 0,
+        is_billable INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS clients (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS tags (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+
+      CREATE TABLE IF NOT EXISTS time_entry_tags (
+        time_entry_id TEXT NOT NULL,
+        tag_id TEXT NOT NULL,
+        PRIMARY KEY (time_entry_id, tag_id)
       );
     `);
   }

@@ -66,14 +66,14 @@ router.get('/:id', async (req, res) => {
 // Create a new task
 router.post('/', async (req, res) => {
   try {
-    const { title, description, planned_duration, scheduled_date, scheduled_time, priority, checklist } = req.body;
+    const { title, description, planned_duration, scheduled_date, scheduled_time, priority, checklist, project_id } = req.body;
     const id = uuidv4();
     const userId = req.user.id;
     const today = new Date().toISOString().split('T')[0];
 
     await db.run(
-      'INSERT INTO tasks (id, user_id, title, description, planned_duration, scheduled_date, scheduled_time, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      id, userId, title, description || '', planned_duration || 0, scheduled_date || today, scheduled_time || null, priority || 'medium'
+      'INSERT INTO tasks (id, user_id, title, description, planned_duration, scheduled_date, scheduled_time, priority, project_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      id, userId, title, description || '', planned_duration || 0, scheduled_date || today, scheduled_time || null, priority || 'medium', project_id || null
     );
 
     if (checklist && checklist.length > 0) {
@@ -97,7 +97,7 @@ router.post('/', async (req, res) => {
 // Update a task
 router.put('/:id', async (req, res) => {
   try {
-    const { title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order } = req.body;
+    const { title, description, planned_duration, scheduled_date, scheduled_time, status, priority, sort_order, project_id } = req.body;
     const task = await db.get('SELECT * FROM tasks WHERE id = ? AND user_id = ?', req.params.id, req.user.id);
     if (!task) return res.status(404).json({ error: 'Task not found' });
 
@@ -110,6 +110,7 @@ router.put('/:id', async (req, res) => {
     const newPriority = priority !== undefined ? priority : task.priority;
     const newSortOrder = sort_order !== undefined ? sort_order : task.sort_order;
     const newCompletedAt = status === 'completed' ? new Date().toISOString() : task.completed_at;
+    const newProjectId = project_id !== undefined ? project_id : task.project_id;
 
     await db.run(
       `UPDATE tasks SET
@@ -121,9 +122,10 @@ router.put('/:id', async (req, res) => {
         status = ?,
         priority = ?,
         sort_order = ?,
-        completed_at = ?
+        completed_at = ?,
+        project_id = ?
       WHERE id = ? AND user_id = ?`,
-      newTitle, newDescription, newPlannedDuration, newScheduledDate, newScheduledTime, newStatus, newPriority, newSortOrder, newCompletedAt, req.params.id, req.user.id
+      newTitle, newDescription, newPlannedDuration, newScheduledDate, newScheduledTime, newStatus, newPriority, newSortOrder, newCompletedAt, newProjectId, req.params.id, req.user.id
     );
 
     const updated = await db.get('SELECT * FROM tasks WHERE id = ?', req.params.id);
