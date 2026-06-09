@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, List, Grid3X3, DollarSign, Clock, Filter } from 'lucide-react';
+import { BarChart3, List, Grid3X3, Clock, Filter } from 'lucide-react';
 import { getSummaryReport, getDetailedReport, getWeeklyReport, getProjects, getClients, getTags } from '../api';
 
 export default function ReportsView() {
@@ -129,7 +129,7 @@ export default function ReportsView() {
             {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
           <select value={billableFilter} onChange={e => setBillableFilter(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+            className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white" style={{display:'none'}}>
             <option value="">All Entries</option>
             <option value="1">Billable</option>
             <option value="0">Non-billable</option>
@@ -152,9 +152,9 @@ export default function ReportsView() {
             </div>
             <div className="card p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-1">
-                <DollarSign className="w-4 h-4" /> Billable Time
+                <Clock className="w-4 h-4" /> Total Entries
               </div>
-              <p className="text-2xl font-bold text-green-600">{formatDuration(summaryData.billable_seconds)}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summaryData.entry_count}</p>
             </div>
             <div className="card p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-sm mb-1">
@@ -228,7 +228,7 @@ export default function ReportsView() {
                     {(entry.tags || []).map(tag => (
                       <span key={tag.id} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">{tag.name}</span>
                     ))}
-                    {entry.is_billable ? <DollarSign className="w-3 h-3 text-green-500" /> : null}
+                    {entry.is_billable ? null : null}
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400">

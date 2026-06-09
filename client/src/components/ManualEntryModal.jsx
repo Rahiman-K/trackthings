@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createManualEntry, getProjects, getTags } from '../api';
 
 export default function ManualEntryModal({ onClose, onSaved }) {
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [isBillable, setIsBillable] = useState(false);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
@@ -29,7 +28,7 @@ export default function ManualEntryModal({ onClose, onSaved }) {
       await createManualEntry({
         description: description.trim(),
         project_id: projectId || null,
-        is_billable: isBillable,
+        is_billable: false,
         started_at,
         ended_at,
         tag_ids: selectedTags,
@@ -131,17 +130,6 @@ export default function ManualEntryModal({ onClose, onSaved }) {
               </div>
             </div>
           )}
-          <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <input
-                type="checkbox"
-                checked={isBillable}
-                onChange={e => setIsBillable(e.target.checked)}
-              />
-              <DollarSign className="w-4 h-4" />
-              Billable
-            </label>
-          </div>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
             <button type="submit" disabled={saving} className="btn-primary disabled:opacity-50">

@@ -160,27 +160,6 @@ export default function ProjectsView() {
                       {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billable Rate ($/hr)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.billable_rate}
-                      onChange={e => setForm({ ...form, billable_rate: parseFloat(e.target.value) || 0 })}
-                      className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <input
-                        type="checkbox"
-                        checked={form.is_billable}
-                        onChange={e => setForm({ ...form, is_billable: e.target.checked })}
-                      />
-                      Billable by default
-                    </label>
-                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" className="btn-primary text-sm flex items-center gap-1">
@@ -205,7 +184,6 @@ export default function ProjectsView() {
                   <p className="font-medium text-gray-900 dark:text-white">{project.name}</p>
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     {project.client_name && <span>Client: {project.client_name}</span>}
-                    {project.is_billable ? <span className="text-green-600">Billable (${project.billable_rate}/hr)</span> : null}
                   </div>
                 </div>
                 <button onClick={() => handleEditProject(project)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">

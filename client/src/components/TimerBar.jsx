@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Square, Pause, DollarSign } from 'lucide-react';
+import { Play, Square, Pause } from 'lucide-react';
 import { quickStartTimer, stopTimer, pauseTimer, resumeTimer, getActiveSession, getProjects } from '../api';
 
 export default function TimerBar({ onSessionChange }) {
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState('');
-  const [isBillable, setIsBillable] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [elapsed, setElapsed] = useState(0);
   const [projects, setProjects] = useState([]);
@@ -42,7 +41,6 @@ export default function TimerBar({ onSessionChange }) {
       if (session) {
         setDescription(session.description || '');
         setProjectId(session.project_id || '');
-        setIsBillable(!!session.is_billable);
       }
     } catch (e) { /* ignore */ }
   };
@@ -59,7 +57,7 @@ export default function TimerBar({ onSessionChange }) {
       const session = await quickStartTimer({
         description: description.trim(),
         project_id: projectId || null,
-        is_billable: isBillable,
+        is_billable: false,
       });
       setActiveSession(session);
       onSessionChange?.();
@@ -73,7 +71,6 @@ export default function TimerBar({ onSessionChange }) {
       setActiveSession(null);
       setDescription('');
       setProjectId('');
-      setIsBillable(false);
       setElapsed(0);
       onSessionChange?.();
     } catch (e) { console.error(e); }
@@ -129,15 +126,6 @@ export default function TimerBar({ onSessionChange }) {
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-
-        <button
-          onClick={() => setIsBillable(!isBillable)}
-          disabled={!!activeSession}
-          className={`p-2 rounded-lg transition-colors ${isBillable ? 'bg-green-100 dark:bg-green-900 text-green-600' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'}`}
-          title={isBillable ? 'Billable' : 'Non-billable'}
-        >
-          <DollarSign className="w-4 h-4" />
-        </button>
 
         <div className="text-lg font-mono font-semibold text-gray-900 dark:text-white min-w-[80px] text-right">
           {formatTime(elapsed)}

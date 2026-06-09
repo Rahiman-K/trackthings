@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Copy, Trash2, Edit3, DollarSign, Tag, Save, X } from 'lucide-react';
+import { Clock, Copy, Trash2, Edit3, Tag, Save, X } from 'lucide-react';
 import { getTimeEntries, updateTimeEntry, duplicateTimeEntry, deleteTimeEntry, getProjects, getTags, setEntryTags } from '../api';
 
 export default function TimeEntryList({ refreshKey }) {
@@ -152,14 +152,6 @@ export default function TimeEntryList({ refreshKey }) {
                         onChange={e => setEditForm({ ...editForm, ended_at: e.target.value })}
                         className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
-                      <label className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
-                        <input
-                          type="checkbox"
-                          checked={editForm.is_billable}
-                          onChange={e => setEditForm({ ...editForm, is_billable: e.target.checked })}
-                        />
-                        Billable
-                      </label>
                     </div>
                     <div className="flex gap-2">
                       <button onClick={handleSaveEdit} className="btn-primary text-sm flex items-center gap-1">
@@ -177,9 +169,6 @@ export default function TimeEntryList({ refreshKey }) {
                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {entry.description || entry.task_title || 'No description'}
                         </p>
-                        {entry.is_billable ? (
-                          <DollarSign className="w-3 h-3 text-green-500 flex-shrink-0" />
-                        ) : null}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         {entry.project_name && (
